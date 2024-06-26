@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Geometries;
 using PeliculasAPI.DTOs;
 using PeliculasAPI.Entidades;
 
@@ -14,11 +16,13 @@ namespace PeliculasAPI.Controllers
     {
         private readonly ApplicationDBContext context;
         private readonly IMapper mapper;
+        private readonly GeometryFactory geometryFactory;
 
-        public SalasDeCineController(ApplicationDBContext context, IMapper mapper) : base (context, mapper)
+        public SalasDeCineController(ApplicationDBContext context, IMapper mapper, GeometryFactory geometryFactory) : base (context, mapper)
         {
             this.context = context;
             this.mapper = mapper;
+            this.geometryFactory = geometryFactory;
         }
 
         [HttpGet]
@@ -32,7 +36,26 @@ namespace PeliculasAPI.Controllers
         {
             return await Get<SalaDeCine, SalaDeCineDTO>(id);
         }
+        
+        [HttpGet("Cercanos")]
+        public async Task<ActionResult<List<SalaDeCineCercanoDTO>>> Cercanos([FromQuery] SalaDeCineCercanoFiltroDTO filtro) 
+        {
+            var ubicacionUsuario = geometryFactory.CreatePoint(new Coordinate(filtro.Longitud, filtro.Latitud));
+            var salasDeCine = await context.SalaDeCine
+                .OrderBy(x => x.Ubicacion.Distance(ubicacionUsuario))
+                .Where(x => x.Ubicacion.IsWithinDistance(ubicacionUsuario, filtro.DistanciaEnKms * 1000))
+                .Select(x => new SalaDeCineCercanoDTO
+                {
+                    Id = x.Id,
+                    Nombre = x.Nombre,
+                    Longitud = x.Ubicacion.Y,
+                    Latitud = x.Ubicacion.X,
+                    DistanciaEnMetros = Math.Round(x.Ubicacion.Distance(ubicacionUsuario))
+                }).ToListAsync();
 
+            return salasDeCine;
+        }
+        
         [HttpPost]
         public async Task<ActionResult> Post([FromBody] SalaDeCineCreacionDTO salaDeCineCreacionDTO)
         {
