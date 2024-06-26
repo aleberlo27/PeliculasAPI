@@ -2,11 +2,12 @@
 
 namespace PeliculasAPI.DTOs
 {
-    //DTO DE CREACION 
-    public class GeneroCreacionDTO
+    public class ActorPatchDTO
     {
         [Required]
-        [StringLength(40)]
+        [StringLength(120)]
         public string Nombre { get; set; }
+        public DateTime FechaNacimiento { get; set; }
+
     }
 }

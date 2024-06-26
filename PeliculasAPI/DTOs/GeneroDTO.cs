@@ -2,6 +2,7 @@
 
 namespace PeliculasAPI.DTOs
 {
+    //DTO DE LECTURA 
     public class GeneroDTO
     {
         public int Id { get; set; }
