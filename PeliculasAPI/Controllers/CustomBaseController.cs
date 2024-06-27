@@ -34,6 +34,11 @@ namespace PeliculasAPI.Controllers
         protected async Task<List<TDTO>> Get<TEntidad, TDTO>(PaginacionDTO paginacionDTO) where TEntidad : class
         {
             var queryable = context.Set<TEntidad>().AsQueryable();
+            return await Get<TEntidad,TDTO>(paginacionDTO,queryable); //En este método reutilizamos código del de abajo
+        }
+
+        protected async Task<List<TDTO>> Get<TEntidad, TDTO>(PaginacionDTO paginacionDTO, IQueryable<TEntidad> queryable) where TEntidad : class
+        {
             await HttpContext.InsertarParametrosPaginacion(queryable, paginacionDTO.CantidadRegistrosPorPagina);
 
             var entidades = await queryable.Paginar(paginacionDTO).ToListAsync();
