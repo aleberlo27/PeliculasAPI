@@ -111,7 +111,7 @@ namespace PeliculasAPI.Controllers
             }
 
             context.Remove(reviewDB);
-            context.SaveChangesAsync();
+            await context.SaveChangesAsync();
             return NoContent();
         }
 
