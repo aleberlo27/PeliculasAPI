@@ -1,10 +1,14 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite;
 using PeliculasAPI;
 using PeliculasAPI.Helpers;
+using PeliculasAPITest.PruebasUnitarias;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,6 +57,38 @@ namespace PeliculasAPITest
             {
                 HttpContext = new DefaultHttpContext() { User = usuario }
             };
+        }
+
+        protected WebApplicationFactory<Startup> ConstruirWebApplicationFactory (string nombreBD, bool ignorarSeguridad = true)
+        {
+            var factory = new WebApplicationFactory<Startup>();
+
+            factory = factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    var descriptorDBContext = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ApplicationDBContext>));
+
+                    if (descriptorDBContext != null)
+                    {
+                        services.Remove(descriptorDBContext);
+                    }
+
+                    services.AddDbContext<ApplicationDBContext>(options => options.UseInMemoryDatabase(nombreBD));
+
+                    if(ignorarSeguridad)
+                    {
+                        services.AddSingleton<IAuthorizationHandler, AllowAnonymunHandler>();
+
+                        services.AddControllers(options =>
+                        {
+                            options.Filters.Add(new UsuarioFalsoFiltro());
+                        });
+                    }
+                });
+            });
+
+            return factory; 
         }
     }
 }
